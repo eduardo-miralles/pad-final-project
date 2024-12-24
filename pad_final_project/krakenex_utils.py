@@ -6,12 +6,12 @@ import krakenex
 def fetch_asset_pairs(api):
 
     response = api.query_public('AssetPairs')
-    pairs = {response['result'][key]["altname"]: key for key in response['result'].keys()}
+    pairs = {response['result'][key]["wsname"]: key for key in response['result'].keys()}
 
     return pairs
 
 
-def fetch_ohlc_data(api, pair, interval=60):
+def fetch_ohlc_data(api, pair, interval = 60):
     """Fetch OHLC data for a given trading pair and interval."""
 
     params = {
@@ -19,6 +19,7 @@ def fetch_ohlc_data(api, pair, interval=60):
         'interval': interval
     }
     response = api.query_public('OHLC', params)
+
     if response['error']:
         raise Exception(f"Error: {response['error']}")
     
@@ -39,7 +40,7 @@ def fetch_ohlc_data(api, pair, interval=60):
     return ohlc_df
 
 
-def compute_bollinger_bands(df, window=20, num_std_dev=2):
+def compute_bollinger_bands(df, window = 20, num_std_dev = 2):
     """Compute Bollinger Bands for a given DataFrame of OHLC data."""
 
     # Compute the rolling mean and standard deviation
@@ -49,20 +50,9 @@ def compute_bollinger_bands(df, window=20, num_std_dev=2):
     # Compute the Bollinger Bands
     df['upper_band'] = df['SMA'] + (num_std_dev * df['STD'])
     df['lower_band'] = df['SMA'] - (num_std_dev * df['STD'])
+
+    # Enhance the DataFrame
+    df = df.rename(columns = {"SMA": "middle_band"})
+    df = df.drop(columns = ["STD"])
     
     return df
-
-
-def downsample_ohlc_data(ohlc_df, interval):
-
-    df_resampled = ohlc_df.resample(f'{4*interval}min').agg({
-        'open': 'first',
-        'high': 'max',
-        'low': 'min',
-        'close': 'last',
-        'vwap': 'mean',
-        'volume': 'sum',
-        'count': 'sum'
-    })
-
-    return df_resampled

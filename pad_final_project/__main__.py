@@ -6,8 +6,7 @@ import mplfinance as mpf
 from krakenex_utils import (
     fetch_asset_pairs, 
     fetch_ohlc_data, 
-    compute_bollinger_bands, 
-    downsample_ohlc_data
+    compute_bollinger_bands
 )
 
 
@@ -21,8 +20,16 @@ def main():
     available_pairs = fetch_asset_pairs(api)
 
     # User input for the trading pair
-    pair = st.selectbox("Enter the Kraken trading pair (e.g., XBTUSD for BTC/USD):", available_pairs.keys())
-    interval = st.selectbox("Select the interval (minutes):", [1, 5, 15, 30, 60, 240, 1440])
+    pair = st.selectbox(
+        "Enter the Kraken trading pair (XBT for Bitcoin):",
+        list(available_pairs.keys()), 
+        index = list(available_pairs.keys()).index("ETH/USDT")
+    )
+    interval = st.selectbox(
+        "Select the interval (minutes):",
+        [1, 5, 15, 30, 60, 240, 1440],
+        index = 4
+    )
 
     pair_kraken_name = available_pairs[pair]
 
@@ -32,45 +39,37 @@ def main():
         
         if ohlc_df is not None:
             # Compute Bollinger Bands
-            window = 20  # 20-period moving average
-            num_std_dev = 2  # 2 standard deviations
-            bollinger_df = compute_bollinger_bands(ohlc_df, window, num_std_dev)
-
-            # Plot the data
-            st.write(f"Price Chart for {pair} (Interval: {interval} minutes)")
+            bollinger_df = compute_bollinger_bands(ohlc_df)
 
             # Plotting within Streamlit
-            ohlc_downsample_df = downsample_ohlc_data(ohlc_df, interval)
-
-            ohlc_downsample_bb_df = ohlc_downsample_df.merge(
-                bollinger_df[["SMA", "upper_band", "lower_band"]],
-                how = "left", 
-                right_index = True, 
-                left_index = True
-            )
-
-            ohlc_downsample_bb_df = ohlc_downsample_bb_df.loc[~ohlc_downsample_bb_df["SMA"].isnull(), :]
+            ohlc_bollinger_df = bollinger_df.tail(180)  # tradingview shows up to 172 bars
 
             fig, axlist = mpf.plot(
-                ohlc_downsample_bb_df,
+                ohlc_bollinger_df,
                 type = 'candlestick',
                 style = 'tradingview',
                 volume = True,
                 tight_layout = True,
                 addplot = [
-                    mpf.make_addplot(ohlc_downsample_bb_df['upper_band'], linewidths = 0.1, color='royalblue'),
-                    mpf.make_addplot(ohlc_downsample_bb_df['SMA'], color='orange'),
-                    mpf.make_addplot(ohlc_downsample_bb_df['lower_band'], linewidths = 0.1, color='royalblue'),
+                    mpf.make_addplot(ohlc_bollinger_df['upper_band'], type = "line", width = 1, color='royalblue'),
+                    mpf.make_addplot(ohlc_bollinger_df['middle_band'], type = "line", color='orange'),
+                    mpf.make_addplot(ohlc_bollinger_df['lower_band'], type = "line", width = 1, color='royalblue'),
                 ],
                 figsize = (12, 8),
                 panel_ratios = (3, 1), 
                 returnfig = True
             )
 
-            # axlist[0].set_xlim([ohlc_downsample_bb_df.index[0], ohlc_downsample_bb_df.index[-1]])
-            axlist[0].set_ylim([0.999*ohlc_downsample_bb_df['lower_band'].min(), 1.001*ohlc_downsample_bb_df['upper_band'].max()])
+            # Rescale Y-Axis
+            ymax = ohlc_bollinger_df['upper_band'].max()
+            ymin = ohlc_bollinger_df['lower_band'].min()
+            axlist[0].set_ylim([ymin - (ymax - ymin) / 10, ymax + (ymax - ymin) / 10])
 
-            fig.subplots_adjust(hspace = 10) 
+            axlist[0].set_title(
+                f"Price Chart for {pair} (Interval: {interval} minutes)", 
+                fontsize = "xx-large", 
+                color = "black"
+            )
 
             # Use Streamlit to display the plot
             st.pyplot(fig)
