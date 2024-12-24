@@ -20,6 +20,16 @@ def main():
     st.title("Kraken Pair Price Chart")
 
     available_pairs = fetch_asset_pairs(api)
+    available_intervals = {
+        "1 minute": 1, 
+        "5 minutes": 5, 
+        "15 minutes": 15, 
+        "30 minutes": 30, 
+        "1 hour": 60, 
+        "4 hours": 240, 
+        "1 day": 1440, 
+        "1 week": 10080
+    }
 
     # User input for the trading pair
     pair = st.selectbox(
@@ -28,16 +38,17 @@ def main():
         index = list(available_pairs.keys()).index("ETH/USDT")
     )
     interval = st.selectbox(
-        "Select the interval (minutes):",
-        [1, 5, 15, 30, 60, 240, 1440],
+        "Select the interval:",
+        list(available_intervals.keys()),
         index = 4
     )
 
     pair_kraken_name = available_pairs[pair]
+    interval_in_minutes = available_intervals[interval]
 
     if st.button("Fetch and Plot"):
         # Fetch the data
-        ohlc_df = fetch_ohlc_data(api, pair_kraken_name, interval)
+        ohlc_df = fetch_ohlc_data(api, pair_kraken_name, interval_in_minutes)
         
         if ohlc_df is not None:
             # Compute Bollinger Bands
@@ -47,7 +58,7 @@ def main():
             bollinger_df["RSI"] = compute_rsi(ohlc_df)
 
             # Plotting within Streamlit
-            ohlc_bollinger_df = bollinger_df.tail(180)  # tradingview shows up to 172 bars
+            ohlc_bollinger_df = bollinger_df.tail(110)  # tradingview shows up to 172 bars
 
             buy_signals = buy_signal(ohlc_bollinger_df)
             sell_signals = sell_signal(ohlc_bollinger_df)
@@ -57,19 +68,34 @@ def main():
                     ohlc_bollinger_df["upper_band"],
                     type = "line",
                     width = 1,
-                    color = "royalblue"
+                    color = "#EF5350"
                 ),
                 mpf.make_addplot(
                     ohlc_bollinger_df["middle_band"],
                     type = "line",
-                    color = "orange"
+                    width = 1,
+                    color = "RoyalBlue"
                 ),
                 mpf.make_addplot(
                     ohlc_bollinger_df["lower_band"],
                     type = "line",
                     width = 1,
-                    color = "royalblue"
-                )
+                    color = "#28A79B"
+                ), 
+                mpf.make_addplot(
+                    ohlc_bollinger_df["percent_b"],
+                    type = "line",
+                    width = 1,
+                    color = "firebrick", 
+                    panel = 2
+                ), 
+                mpf.make_addplot(
+                    ohlc_bollinger_df["RSI"],
+                    type = "line",
+                    width = 1,
+                    color = "slateblue", 
+                    panel = 2
+                ), 
             ]
 
             if not buy_signals.dropna().empty:
@@ -102,7 +128,7 @@ def main():
                 tight_layout = True,
                 addplot = apds,
                 figsize = (12, 8),
-                panel_ratios = (3, 1), 
+                panel_ratios = (5, 1, 2), 
                 returnfig = True
             )
 
@@ -110,6 +136,13 @@ def main():
             ymax = max([ohlc_bollinger_df["upper_band"].max(), sell_signals.max()])
             ymin = min([ohlc_bollinger_df["lower_band"].min(), buy_signals.min()])
             axlist[0].set_ylim([ymin - (ymax - ymin) / 10, ymax + (ymax - ymin) / 10])
+
+            axlist[4].set_ylabel("%B").set_color("firebrick")
+            axlist[4].set_ylim([-0.5, 1.5])
+
+            axlist[5].set_ylabel("RSI").set_color("slateblue")
+            axlist[5].set_ylim([10, 90])
+            axlist[5].set_yticks([10, 30, 50, 70, 90])
 
             axlist[0].set_title(
                 f"Price Chart for {pair} (Interval: {interval} minutes)", 
