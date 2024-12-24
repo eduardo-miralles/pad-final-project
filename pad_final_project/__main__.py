@@ -5,7 +5,10 @@ import mplfinance as mpf
 from krakenex_utils import (
     fetch_asset_pairs, 
     fetch_ohlc_data, 
-    compute_bollinger_bands
+    compute_bollinger_bands, 
+    compute_rsi, 
+    buy_signal, 
+    sell_signal
 )
 
 
@@ -40,8 +43,14 @@ def main():
             # Compute Bollinger Bands
             bollinger_df = compute_bollinger_bands(ohlc_df)
 
+            # Compute RSI
+            bollinger_df["RSI"] = compute_rsi(ohlc_df)
+
             # Plotting within Streamlit
             ohlc_bollinger_df = bollinger_df.tail(180)  # tradingview shows up to 172 bars
+
+            buy_signals = buy_signal(ohlc_bollinger_df)
+            sell_signals = sell_signal(ohlc_bollinger_df)
 
             apds = [
                 mpf.make_addplot(
@@ -63,6 +72,28 @@ def main():
                 )
             ]
 
+            if not buy_signals.dropna().empty:
+                apds.append(
+                    mpf.make_addplot(
+                        buy_signals,
+                        type = "scatter",
+                        markersize = 50,
+                        marker = "^", 
+                        label = "buy signals"
+                    )
+                )
+            
+            if not sell_signals.dropna().empty:
+                apds.append(
+                    mpf.make_addplot(
+                        sell_signals,
+                        type = "scatter",
+                        markersize = 50,
+                        marker = "v", 
+                        label = "sell signals"
+                    )
+                )
+
             fig, axlist = mpf.plot(
                 ohlc_bollinger_df,
                 type = "candlestick",
@@ -76,8 +107,8 @@ def main():
             )
 
             # Rescale Y-Axis
-            ymax = ohlc_bollinger_df["upper_band"].max()
-            ymin = ohlc_bollinger_df["lower_band"].min()
+            ymax = max([ohlc_bollinger_df["upper_band"].max(), sell_signals.max()])
+            ymin = min([ohlc_bollinger_df["lower_band"].min(), buy_signals.min()])
             axlist[0].set_ylim([ymin - (ymax - ymin) / 10, ymax + (ymax - ymin) / 10])
 
             axlist[0].set_title(

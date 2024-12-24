@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def fetch_asset_pairs(api):
@@ -51,8 +52,87 @@ def compute_bollinger_bands(df, window = 20, num_std_dev = 2):
     df["upper_band"] = df["SMA"] + (num_std_dev * df["STD"])
     df["lower_band"] = df["SMA"] - (num_std_dev * df["STD"])
 
+    # Percent B indicator
+    df["percent_b"] = (df["close"] - df["lower_band"]) / (df["upper_band"] - df["lower_band"])
+
     # Enhance the DataFrame
     df = df.rename(columns = {"SMA": "middle_band"})
     df = df.drop(columns = ["STD"])
     
     return df
+
+
+def compute_rsi(df, column="close", period=14):
+    """
+    Compute the Relative Strength Index (RSI) for a given DataFrame.
+    
+    Parameters:
+    - df: DataFrame containing price data.
+    - column: The column name with price data (default is "close").
+    - period: The lookback period for RSI calculation (default is 14).
+    
+    Returns:
+    - A pandas Series with RSI values.
+    """
+    # Calculate price changes
+    delta = df[column].diff()
+
+    # Separate gains and losses
+    gains = delta.where(delta > 0, 0.0)
+    losses = -delta.where(delta < 0, 0.0)
+
+    # Calculate average gains and losses
+    avg_gain = gains.ewm(span=period).mean()
+    avg_loss = losses.ewm(span=period).mean()
+
+    # Calculate RS (Relative Strength)
+    rs = avg_gain / avg_loss
+
+    # Calculate RSI
+    rsi = 100 - (100 / (1 + rs))
+    
+    return rsi
+
+
+def buy_signal(df):
+
+    percentB = df["percent_b"]
+    price = df["low"]
+    rsi = df["RSI"]
+    bollinger_diff = df["upper_band"] - df["lower_band"]
+
+    signal = []
+    index = []
+    previous = -1.0
+
+    for date, value in percentB.items():
+        if value < 0 and previous >= 0 and rsi[date] <= 30:
+            signal.append(price[date] - bollinger_diff[date] / 5)
+        else:
+            signal.append(np.nan)
+        index.append(date)
+        previous = value
+    
+    return pd.Series(signal, index)
+
+
+def sell_signal(df):
+    
+    percentB = df["percent_b"]
+    price = df["high"]
+    rsi = df["RSI"]
+    bollinger_diff = df["upper_band"] - df["lower_band"]
+
+    signal = []
+    index = []
+    previous = -1.0
+
+    for date, value in percentB.items():
+        if value > 1 and previous <= 1 and rsi[date] >= 70:
+            signal.append(price[date] + bollinger_diff[date] / 5)
+        else:
+            signal.append(np.nan)
+        index.append(date)
+        previous = value
+    
+    return pd.Series(signal, index)
