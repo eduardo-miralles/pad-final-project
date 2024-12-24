@@ -1,6 +1,5 @@
 import streamlit as st
 import krakenex
-import matplotlib.pyplot as plt
 import mplfinance as mpf
 
 from krakenex_utils import (
@@ -46,14 +45,14 @@ def main():
 
             fig, axlist = mpf.plot(
                 ohlc_bollinger_df,
-                type = 'candlestick',
-                style = 'tradingview',
+                type = "candlestick",
+                style = "tradingview",
                 volume = True,
                 tight_layout = True,
                 addplot = [
-                    mpf.make_addplot(ohlc_bollinger_df['upper_band'], type = "line", width = 1, color='royalblue'),
-                    mpf.make_addplot(ohlc_bollinger_df['middle_band'], type = "line", color='orange'),
-                    mpf.make_addplot(ohlc_bollinger_df['lower_band'], type = "line", width = 1, color='royalblue'),
+                    mpf.make_addplot(ohlc_bollinger_df["upper_band"], type = "line", width = 1, color="royalblue"),
+                    mpf.make_addplot(ohlc_bollinger_df["middle_band"], type = "line", color="orange"),
+                    mpf.make_addplot(ohlc_bollinger_df["lower_band"], type = "line", width = 1, color="royalblue"),
                 ],
                 figsize = (12, 8),
                 panel_ratios = (3, 1), 
@@ -61,8 +60,8 @@ def main():
             )
 
             # Rescale Y-Axis
-            ymax = ohlc_bollinger_df['upper_band'].max()
-            ymin = ohlc_bollinger_df['lower_band'].min()
+            ymax = ohlc_bollinger_df["upper_band"].max()
+            ymin = ohlc_bollinger_df["lower_band"].min()
             axlist[0].set_ylim([ymin - (ymax - ymin) / 10, ymax + (ymax - ymin) / 10])
 
             axlist[0].set_title(
