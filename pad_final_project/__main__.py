@@ -43,17 +43,33 @@ def main():
             # Plotting within Streamlit
             ohlc_bollinger_df = bollinger_df.tail(180)  # tradingview shows up to 172 bars
 
+            apds = [
+                mpf.make_addplot(
+                    ohlc_bollinger_df["upper_band"],
+                    type = "line",
+                    width = 1,
+                    color = "royalblue"
+                ),
+                mpf.make_addplot(
+                    ohlc_bollinger_df["middle_band"],
+                    type = "line",
+                    color = "orange"
+                ),
+                mpf.make_addplot(
+                    ohlc_bollinger_df["lower_band"],
+                    type = "line",
+                    width = 1,
+                    color = "royalblue"
+                )
+            ]
+
             fig, axlist = mpf.plot(
                 ohlc_bollinger_df,
                 type = "candlestick",
                 style = "tradingview",
                 volume = True,
                 tight_layout = True,
-                addplot = [
-                    mpf.make_addplot(ohlc_bollinger_df["upper_band"], type = "line", width = 1, color="royalblue"),
-                    mpf.make_addplot(ohlc_bollinger_df["middle_band"], type = "line", color="orange"),
-                    mpf.make_addplot(ohlc_bollinger_df["lower_band"], type = "line", width = 1, color="royalblue"),
-                ],
+                addplot = apds,
                 figsize = (12, 8),
                 panel_ratios = (3, 1), 
                 returnfig = True
