@@ -2,6 +2,8 @@ import streamlit as st
 import krakenex
 import mplfinance as mpf
 
+import constants as c
+
 from krakenex_utils import (
     fetch_asset_pairs, 
     fetch_ohlc_data, 
@@ -19,16 +21,7 @@ api = krakenex.API()
 st.title("Kraken Pair Price Chart")
 
 available_pairs = fetch_asset_pairs(api)
-available_intervals = {
-    "1 minute": 1, 
-    "5 minutes": 5, 
-    "15 minutes": 15, 
-    "30 minutes": 30, 
-    "1 hour": 60, 
-    "4 hours": 240, 
-    "1 day": 1440, 
-    "1 week": 10080
-}
+available_intervals = c.available_intervals
 
 # User input for the trading pair
 pair = st.selectbox(
@@ -42,6 +35,7 @@ interval = st.selectbox(
     index = 4
 )
 
+# Normalising names for API query
 pair_kraken_name = available_pairs[pair]
 interval_in_minutes = available_intervals[interval]
 
@@ -56,12 +50,14 @@ if st.button("Fetch and Plot"):
         # Compute RSI
         bollinger_df["RSI"] = compute_rsi(ohlc_df)
 
-        # Plotting within Streamlit
-        ohlc_bollinger_df = bollinger_df.tail(110)  # tradingview shows up to 172 bars
+        # Consider only most recent prices (for plotting)
+        ohlc_bollinger_df = bollinger_df.tail(110)
 
+        # Automatic creation of buy and sell signals
         buy_signals = buy_signal(ohlc_bollinger_df)
         sell_signals = sell_signal(ohlc_bollinger_df)
 
+        # Plotting within Streamlit
         apds = [
             mpf.make_addplot(
                 ohlc_bollinger_df["upper_band"],
@@ -143,8 +139,9 @@ if st.button("Fetch and Plot"):
         axlist[5].set_ylim([10, 90])
         axlist[5].set_yticks([10, 30, 50, 70, 90])
 
+        # Set title for the plot
         axlist[0].set_title(
-            f"Price Chart for {pair} (Interval: {interval} minutes)", 
+            f"Price Chart for {pair} (Interval: {interval})", 
             fontsize = "xx-large", 
             color = "black"
         )
