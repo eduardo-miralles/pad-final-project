@@ -9,6 +9,8 @@ def main():
         subprocess.run(
             bash_command, shell = True, check = True, text = True
         )
+    except KeyboardInterrupt:
+        pass
     except subprocess.CalledProcessError as e:
         print(f"Error: {e}")
         print(f"Stderr: {e.stderr}")

@@ -154,6 +154,7 @@ def buy_signal(df) -> pd.Series:
     price = df["low"]
     rsi = df["RSI"]
 
+    # Adjust singal sepparation for plots
     ymax = df["upper_band"].max()
     ymin = df["lower_band"].min()
     separation = (ymax - ymin) / 20
@@ -164,6 +165,7 @@ def buy_signal(df) -> pd.Series:
     previous_rsi = 0
 
     for date, value in percentB.items():
+        # Condition for buying
         if value < 0 and previous_pb >= value and rsi[date] <= 30 and previous_rsi >= rsi[date]:
             signal.append(price[date] - separation)
         else:
@@ -171,16 +173,11 @@ def buy_signal(df) -> pd.Series:
         index.append(date)
         previous_pb = value
         previous_rsi = rsi[date]
-
-    for i in range(len(signal)):
-        if i < len(signal) - 1 and not np.isnan(signal[i]) and not np.isnan(signal[i + 1]):
-            # If the current and next elements are non-NaN, set current to NaN
-            signal[i] = np.nan
     
     return pd.Series(signal, index)
 
 
-def sell_signal(df):
+def sell_signal(df) -> pd.Series:
     """
     Computes when to generate a sell signal using %B and RSI indicators.
 
@@ -191,10 +188,12 @@ def sell_signal(df):
         pd.Series: Series containing the sell signals
     """
     
+    # Extract relevant Series from original DataFrame
     percentB = df["percent_b"]
     price = df["high"]
     rsi = df["RSI"]
 
+    # Adjust singal sepparation for plots
     ymax = df["upper_band"].max()
     ymin = df["lower_band"].min()
     separation = (ymax - ymin) / 20
@@ -205,6 +204,7 @@ def sell_signal(df):
     previous_rsi = 100
 
     for date, value in percentB.items():
+        # Condition for buying
         if value > 1 and previous_pb <= value and rsi[date] >= 70 and previous_rsi <= rsi[date]:
             signal.append(price[date] + separation)
         else:
@@ -212,10 +212,5 @@ def sell_signal(df):
         index.append(date)
         previous_pb = value
         previous_rsi = rsi[date]
-
-    for i in range(len(signal)):
-        if i < len(signal) - 1 and not np.isnan(signal[i]) and not np.isnan(signal[i + 1]):
-            # If the current and next elements are non-NaN, set current to NaN
-            signal[i] = np.nan
     
     return pd.Series(signal, index)

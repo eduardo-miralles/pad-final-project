@@ -2,9 +2,8 @@ import streamlit as st
 import krakenex
 import mplfinance as mpf
 
-import constants as c
-
 from krakenex_utils import (
+    available_intervals, 
     fetch_asset_pairs, 
     fetch_ohlc_data, 
     compute_bollinger_bands, 
@@ -21,7 +20,6 @@ api = krakenex.API()
 st.title("Kraken Pair Price Chart")
 
 available_pairs = fetch_asset_pairs(api)
-available_intervals = c.available_intervals
 
 # User input for the trading pair
 pair = st.selectbox(
@@ -98,6 +96,7 @@ if st.button("Fetch and Plot"):
                 mpf.make_addplot(
                     buy_signals,
                     type = "scatter",
+                    color = "RoyalBlue",
                     markersize = 50,
                     marker = "^", 
                     label = "buy signals"
@@ -109,6 +108,7 @@ if st.button("Fetch and Plot"):
                 mpf.make_addplot(
                     sell_signals,
                     type = "scatter",
+                    color = "orange",
                     markersize = 50,
                     marker = "v", 
                     label = "sell signals"
