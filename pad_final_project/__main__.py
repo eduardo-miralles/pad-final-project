@@ -6,11 +6,13 @@ import sys
 def main():
 
     try:
-        if os.path.exists("pad_final_project/streamlit_app.py"):  # Case: Running from cloned repo
+        if os.path.exists("pad_final_project/streamlit_app.py"):
+            # Case: Running from cloned repo
             app_path = "pad_final_project/streamlit_app.py"
-        else:  # Case: Running from installed package
-            # Dynamically find the installed package path
+        else:
+            # Case: Running from installed package
             try:
+                # Dynamically find the installed package path
                 import pad_final_project
                 app_path = os.path.join(os.path.dirname(pad_final_project.__file__), "streamlit_app.py")
             except ImportError:

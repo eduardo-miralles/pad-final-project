@@ -20,7 +20,7 @@ def fetch_asset_pairs(api) -> dict:
     Fetch every asset pair available in Kraken.
 
     Args:
-        api (krakenex.api.API): 
+        api (krakenex.api.API)
 
     Returns:
         dict: Dictionary containing classic asset pairs names as keys and Kraken names as values
@@ -40,7 +40,7 @@ def fetch_ohlc_data(api, pair, interval = 60) -> pd.DataFrame:
     Fetch OHLC data for a given trading pair and interval.
 
     Args:
-        api (krakenex.api.API): 
+        api (krakenex.api.API)
         pair (str): String containing the Kraken name of an asset pair
         interval (int): Time duration of each interval in minutes (default is 60)
 
