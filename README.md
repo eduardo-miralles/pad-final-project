@@ -39,7 +39,7 @@ The goal of this project is computing the Bollinger Bands of a specified cryptoc
 ## Tests
 Run tests with the following command to see coverage:
 ```bash
-pytest --cov
+poetry run pytest --cov
 ```
 
 ## Contributors
