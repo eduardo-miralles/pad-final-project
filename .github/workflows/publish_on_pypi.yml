@@ -30,9 +30,6 @@ jobs:
     - name: Install dependencies
       run: poetry install
 
-    - name: Build package
-      run: poetry build
-
     - name: Publish package to Test PyPI
       env:
         TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
