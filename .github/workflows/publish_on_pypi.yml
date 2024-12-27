@@ -1,5 +1,5 @@
 ---
-name: Publish Python Package
+name: Python Package
 
 on:
   push:
@@ -35,8 +35,8 @@ jobs:
 
     - name: Publish package to Test PyPI
       env:
-        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      run: poetry publish --build --no-interaction --repository testpypi --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+        PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
+      run: poetry publish --build --no-interaction --repository testpypi --username __token__ --password ${{ secrets.TEST_PYPI_TOKEN }}
 
     - name: Publish package to PyPI
       env:
