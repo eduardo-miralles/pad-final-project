@@ -26,6 +26,9 @@ def fetch_asset_pairs(api) -> dict:
     """
 
     response = api.query_public("AssetPairs")
+    if response["error"]:
+        raise Exception(f"Error: {response["error"]}")
+    
     pairs = {response["result"][key]["wsname"]: key for key in response["result"].keys()}
 
     return pairs

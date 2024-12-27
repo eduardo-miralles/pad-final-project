@@ -2,7 +2,7 @@ import streamlit as st
 import krakenex
 import mplfinance as mpf
 
-from krakenex_utils import (
+from pad_final_project.utils import (
     available_intervals, 
     fetch_asset_pairs, 
     fetch_ohlc_data, 
