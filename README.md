@@ -29,11 +29,12 @@ The goal of this project is computing the Bollinger Bands of a specified cryptoc
    ```
 
 ## Usage
-To start the application run:
-```bash
-python -m pad_final_project
-```
-and make sure you have a browser installed.
+1. To start the application run:
+   ```bash
+   python -m pad_final_project
+   ```
+   and make sure you have a browser installed.
+2. To terminate the app, type `ctrl + C` on the command line.
 
 ## Tests
 Run tests with the following command:
@@ -42,4 +43,4 @@ pytest --cov
 ```
 
 ## Contributors
-- Eduardo Miralles
+- Eduardo Miralles [emirallesiz@alumni.unav.es](mailto:emirallesiz@alumni.unav.es)
