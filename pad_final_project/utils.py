@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 
 
+# Dictionary that maps human-readable intervals to the corresponding Kraken API values
 available_intervals = {
     "1 minute": 1,
     "5 minutes": 5,
