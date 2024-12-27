@@ -29,11 +29,15 @@ jobs:
 
     - name: Install dependencies
       run: poetry install
+    
+    - name: Build package
+      run: poetry build
 
     - name: Publish package to Test PyPI
       env:
         TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
       run: |
+        rm -rf dist/
         poetry config repositories.testpypi https://test.pypi.org/legacy/
         poetry config pypi-token.testpypi $TEST_PYPI_TOKEN
         poetry publish --build --repository testpypi
@@ -41,4 +45,6 @@ jobs:
     - name: Publish package to PyPI
       env:
         PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      run: poetry publish --build --no-interaction --username __token__ --password $PYPI_TOKEN
+      run: |
+        rm -rf dist/
+        poetry publish --build --no-interaction --username __token__ --password $PYPI_TOKEN
