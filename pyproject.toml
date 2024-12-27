@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pad-final-project"
-version = "0.1.4"
+version = "0.1.5"
 description = "Final project for the 'Python for data analysis' subject in the UNAV Master's degree in Big Data Science."
 authors = ["Eduardo Miralles <emirallesiz@alumni.unav.es>"]
 readme = "README.md"
