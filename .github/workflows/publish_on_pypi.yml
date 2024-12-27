@@ -35,13 +35,13 @@ jobs:
 
     - name: Publish package to Test PyPI
       env:
-        PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
+        TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
       run: |
         poetry config repositories.testpypi https://test.pypi.org/legacy/
-        poetry config pypi-token.testpypi ${{ secrets.TEST_PYPI_TOKEN }}
+        poetry config pypi-token.testpypi $TEST_PYPI_TOKEN
         poetry publish --build --repository testpypi
 
     - name: Publish package to PyPI
       env:
         PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      run: poetry publish --build --no-interaction --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+      run: poetry publish --build --no-interaction --username __token__ --password $PIPY_TOKEN
