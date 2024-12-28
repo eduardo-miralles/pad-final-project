@@ -8,8 +8,8 @@ from pad_final_project.utils import (
     fetch_ohlc_data,
     compute_bollinger_bands,
     compute_rsi,
-    buy_signal,
-    sell_signal
+    compute_buy_signals,
+    compute_sell_signals
 )
 
 @pytest.fixture
@@ -85,46 +85,91 @@ def test_compute_bollinger_bands():
         "close": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     }
     df = pd.DataFrame(data)
-    result_df = compute_bollinger_bands(df, window=2, num_std=1)
+    result_df = compute_bollinger_bands(df, window = 2, num_std = 1)
 
     assert "upper_band" in result_df.columns
     assert "lower_band" in result_df.columns
     assert "middle_band" in result_df.columns
+    assert "percent_b" in result_df.columns
+
+def test_compute_bollinger_bands_error():
+    data = {
+        "open": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+    df = pd.DataFrame(data)
+
+    # Call the function and assert it raises an exception
+    with pytest.raises(Exception):
+        compute_bollinger_bands(df, window = 2, num_std = 1)
 
 def test_compute_rsi():
     data = {
         "close": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     }
     df = pd.DataFrame(data)
-    result_series = compute_rsi(df, period=2)
+    result_series = compute_rsi(df, period = 2)
 
     assert isinstance(result_series, pd.Series)
     assert len(result_series) == len(df)
 
-def test_buy_signal():
+def test_compute_rsi_error():
     data = {
-        "percent_b": [0.1, -0.1, -0.2, -0.3, -0.4],
+        "open": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+    df = pd.DataFrame(data)
+
+    # Call the function and assert it raises an exception
+    with pytest.raises(Exception):
+        compute_rsi(df, period = 2)
+
+def test_compute_buy_signals():
+    data = {
+        "percent_b": [0.1, -0.1, -0.2, -0.3, 0.1],
         "low": [1, 2, 3, 4, 5],
-        "RSI": [50, 40, 30, 20, 10],
+        "RSI": [50, 40, 30, 20, 40],
         "upper_band": [6, 6, 6, 6, 6],
         "lower_band": [0, 0, 0, 0, 0]
     }
     df = pd.DataFrame(data)
-    result_series = buy_signal(df)
+    result_series = compute_buy_signals(df)
 
     assert isinstance(result_series, pd.Series)
     assert len(result_series) == len(df)
 
-def test_sell_signal():
+def test_compute_buy_signals_error():
     data = {
-        "percent_b": [0.9, 1.1, 1.2, 1.3, 1.4],
-        "high": [1, 2, 3, 4, 5],
-        "RSI": [50, 60, 70, 80, 90],
+        "low": [1, 2, 3, 4, 5],
+        "RSI": [50, 40, 30, 20, 40],
         "upper_band": [6, 6, 6, 6, 6],
         "lower_band": [0, 0, 0, 0, 0]
     }
     df = pd.DataFrame(data)
-    result_series = sell_signal(df)
+    result_series = compute_buy_signals(df)
+
+    assert result_series.isnull().all()
+
+def test_compute_sell_signals():
+    data = {
+        "percent_b": [0.9, 1.1, 1.2, 1.3, 0.9],
+        "high": [1, 2, 3, 4, 5],
+        "RSI": [50, 60, 70, 80, 60],
+        "upper_band": [6, 6, 6, 6, 6],
+        "lower_band": [0, 0, 0, 0, 0]
+    }
+    df = pd.DataFrame(data)
+    result_series = compute_sell_signals(df)
 
     assert isinstance(result_series, pd.Series)
     assert len(result_series) == len(df)
+
+def test_compute_sell_signals_error():
+    data = {
+        "low": [1, 2, 3, 4, 5],
+        "RSI": [50, 40, 30, 20, 40],
+        "upper_band": [6, 6, 6, 6, 6],
+        "lower_band": [0, 0, 0, 0, 0]
+    }
+    df = pd.DataFrame(data)
+    result_series = compute_sell_signals(df)
+
+    assert result_series.isnull().all()

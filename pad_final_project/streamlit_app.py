@@ -8,8 +8,8 @@ from utils import (
     fetch_ohlc_data, 
     compute_bollinger_bands, 
     compute_rsi, 
-    buy_signal, 
-    sell_signal
+    compute_buy_signals, 
+    compute_sell_signals
 )
 
 
@@ -52,8 +52,8 @@ if st.button("Fetch and Plot"):
         ohlc_bollinger_df = bollinger_df.tail(110)
 
         # Automatic creation of buy and sell signals
-        buy_signals = buy_signal(ohlc_bollinger_df)
-        sell_signals = sell_signal(ohlc_bollinger_df)
+        buy_signals = compute_buy_signals(ohlc_bollinger_df)
+        sell_signals = compute_sell_signals(ohlc_bollinger_df)
 
         # Plotting within Streamlit
         apds = [

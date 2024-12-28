@@ -78,12 +78,13 @@ def fetch_ohlc_data(api, pair, interval = 60) -> pd.DataFrame:
     return ohlc_df
 
 
-def compute_bollinger_bands(df, window = 20, num_std = 2) -> pd.DataFrame:
+def compute_bollinger_bands(df, column = "close", window = 20, num_std = 2) -> pd.DataFrame:
     """
     Compute Bollinger Bands for a given DataFrame of OHLC data.
     
     Args:
         df (pd.DataFrame): DataFrame containing the OHLC data
+        column (str): The column name with price data (default is "close")
         window (int): Size of the interval window for the rolling mean (default is 20)
         num_std (int): Number of standard deviatinons used to compute the Bollinger bands (default is 2)
 
@@ -91,16 +92,19 @@ def compute_bollinger_bands(df, window = 20, num_std = 2) -> pd.DataFrame:
         pd.DataFrame: DataFrame containing the OHLC data and Bollinger bands
     """
 
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' not found in DataFrame")
+    
     # Compute the rolling mean and standard deviation
-    df["SMA"] = df["close"].rolling(window = window).mean()
-    df["STD"] = df["close"].rolling(window = window).std()
+    df["SMA"] = df[column].rolling(window = window, min_periods = 1).mean()
+    df["STD"] = df[column].rolling(window = window, min_periods = 1).std()
     
     # Compute the Bollinger Bands
     df["upper_band"] = df["SMA"] + (num_std * df["STD"])
     df["lower_band"] = df["SMA"] - (num_std * df["STD"])
 
     # Percent B indicator
-    df["percent_b"] = (df["close"] - df["lower_band"]) / (df["upper_band"] - df["lower_band"])
+    df["percent_b"] = (df[column] - df["lower_band"]) / (df["upper_band"] - df["lower_band"])
 
     # Enhance the DataFrame
     df = df.rename(columns = {"SMA": "middle_band"})
@@ -122,6 +126,9 @@ def compute_rsi(df, column = "close", period = 14) -> pd.Series:
         pd.Series: Series with RSI values
     """
 
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' not found in DataFrame")
+
     # Calculate price changes
     delta = df[column].diff()
 
@@ -142,7 +149,7 @@ def compute_rsi(df, column = "close", period = 14) -> pd.Series:
     return rsi
 
 
-def buy_signal(df) -> pd.Series:
+def compute_buy_signals(df) -> pd.Series:
     """
     Computes when to generate a buy signal using %B and RSI indicators.
 
@@ -153,35 +160,44 @@ def buy_signal(df) -> pd.Series:
         pd.Series: Series containing the buy signals
     """
 
-    # Extract relevant Series from original DataFrame
-    percentB = df["percent_b"]
-    price = df["low"]
-    rsi = df["RSI"]
+    try:
+        # Extract relevant Series from original DataFrame
+        percentB = df["percent_b"]
+        rsindex = df["RSI"]
 
-    # Adjust singal sepparation for plots
-    ymax = df["upper_band"].max()
-    ymin = df["lower_band"].min()
-    separation = (ymax - ymin) / 20
+        # Adjust singal sepparation for signal plots
+        separation = (df["upper_band"].max() - df["lower_band"].min()) / 20
 
-    signal = []
-    index = []
-    previous_pb = -1
-    previous_rsi = 0
+        signal = []
+        index = []
+        previous_pb = 0.5
+        previous_rsi = 50
 
-    for date, value in percentB.items():
-        # Condition for buying
-        if value < 0 and previous_pb >= value and rsi[date] <= 30 and previous_rsi >= rsi[date]:
-            signal.append(price[date] - separation)
-        else:
-            signal.append(np.nan)
-        index.append(date)
-        previous_pb = value
-        previous_rsi = rsi[date]
-    
-    return pd.Series(signal, index)
+        for date, pb in percentB.items():
+            rsi = rsindex[date]
+            # Condition for buying
+            buy_condition = (
+                (previous_pb < 0 and pb > 0 and previous_rsi <= 30 and rsi >= previous_rsi) or
+                (previous_pb < 0 and pb > previous_pb and previous_rsi <= 30 and rsi >= 30)
+            )
+            if buy_condition:
+                signal.append(df["low"].loc[date] - separation)
+            else:
+                signal.append(np.nan)
+            index.append(date)
+            previous_pb = pb
+            previous_rsi = rsi
+        
+        buy_signals = pd.Series(signal, index)
+
+    except Exception as e:
+        print("The input DataFrame does not contain the necessary columns. Not computing buy signals.")
+        buy_signals = pd.Series([np.nan] * len(df), index=df.index)
+        
+    return buy_signals
 
 
-def sell_signal(df) -> pd.Series:
+def compute_sell_signals(df) -> pd.Series:
     """
     Computes when to generate a sell signal using %B and RSI indicators.
 
@@ -192,29 +208,38 @@ def sell_signal(df) -> pd.Series:
         pd.Series: Series containing the sell signals
     """
     
-    # Extract relevant Series from original DataFrame
-    percentB = df["percent_b"]
-    price = df["high"]
-    rsi = df["RSI"]
+    try:
+        # Extract relevant Series from original DataFrame
+        percentB = df["percent_b"]
+        rsindex = df["RSI"]
 
-    # Adjust singal sepparation for plots
-    ymax = df["upper_band"].max()
-    ymin = df["lower_band"].min()
-    separation = (ymax - ymin) / 20
+        # Adjust singal sepparation for signal plots
+        separation = (df["upper_band"].max() - df["lower_band"].min()) / 20
 
-    signal = []
-    index = []
-    previous_pb = 2
-    previous_rsi = 100
+        signal = []
+        index = []
+        previous_pb = 0.5
+        previous_rsi = 50
 
-    for date, value in percentB.items():
-        # Condition for buying
-        if value > 1 and previous_pb <= value and rsi[date] >= 70 and previous_rsi <= rsi[date]:
-            signal.append(price[date] + separation)
-        else:
-            signal.append(np.nan)
-        index.append(date)
-        previous_pb = value
-        previous_rsi = rsi[date]
-    
-    return pd.Series(signal, index)
+        for date, pb in percentB.items():
+            rsi = rsindex[date]
+            # Condition for selling
+            sell_condition = (
+                (previous_pb > 1 and pb < 1 and previous_rsi >= 70 and rsi <= previous_rsi) or
+                (previous_pb > 1 and pb < previous_pb and previous_rsi >= 70 and rsi <= 70)
+            )
+            if sell_condition:
+                signal.append(df["high"].loc[date] + separation)
+            else:
+                signal.append(np.nan)
+            index.append(date)
+            previous_pb = pb
+            previous_rsi = rsi
+        
+        sell_signals = pd.Series(signal, index)
+        
+    except Exception as e:
+        print("The input DataFrame does not contain the necessary columns. Not computing sell signals.")
+        sell_signals = pd.Series([np.nan] * len(df), index=df.index)
+        
+    return sell_signals
